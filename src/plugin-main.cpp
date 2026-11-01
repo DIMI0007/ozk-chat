@@ -120,7 +120,7 @@ QPushButton#Settings { color:#e1ebff; background:qlineargradient(x1:0,y1:0,x2:0,
 QPushButton#Settings:hover { background:#26344d; border-color:#6476a0; }
 QPushButton#ScrollBottom { color:#b7efff; background:#17283a; border:1px solid #34627b; border-radius:7px; min-height:18px; max-height:18px; padding:0 6px; font-size:10px; }
 QPushButton#ScrollBottom:hover { color:#ffffff; background:#24405a; }
-QLabel#Credit { color:#9299a5; background:#080f18; min-height:20px; max-height:20px; font-size:11px; }
+QLabel#Credit { color:#9badc2; background:#0b1723; border-top:1px solid #263b50; min-height:22px; max-height:22px; font-size:10px; }
 QLineEdit,QTextEdit,QComboBox { color:#e7eeff; background:#0c1420; border:1px solid #344865; border-radius:6px; padding:5px; selection-background-color:#316ac4; }
 QLineEdit:focus,QTextEdit:focus,QComboBox:focus { border-color:#776af5; background:#111c2e; }
 QComboBox QAbstractItemView { background:#101a2b; color:#e7eeff; selection-background-color:#26344d; }
@@ -218,6 +218,7 @@ QString compactStatus(QString value,const QString& platform){
     if(value.contains("активный эфир с чатом не найден",Qt::CaseInsensitive))return "Эфир не найден";
     if(value.contains("чат подключён",Qt::CaseInsensitive))return "Подключён";
     if(value.contains("не подключён",Qt::CaseInsensitive))return "Не подключён";
+    if(value.contains("восстанавливаем",Qt::CaseInsensitive))return "Восстанавливаем";
     if(value.contains("вход выполнен",Qt::CaseInsensitive))return "Подключён";
     if(value.contains("подтвердите",Qt::CaseInsensitive))return "Подтвердите вход";
     if(value.contains("завершаем вход",Qt::CaseInsensitive))return "Завершаем вход";
@@ -236,6 +237,7 @@ QString englishStatus(const QString& value){
     if(value=="Канал не найден")return "Channel not found";
     if(value=="Подключён")return "Connected";
     if(value=="Не подключён")return "Not connected";
+    if(value=="Восстанавливаем")return "Reconnecting";
     if(value=="Подтвердите вход")return "Confirm sign-in";
     if(value=="Завершаем вход")return "Signing in";
     if(value=="Ищем эфир")return "Finding stream";
@@ -253,8 +255,8 @@ void paintStatus(QLabel* label,const QString& raw,const QString& platform,bool r
     const QString value=compactStatus(raw,platform);QString color="#8ea1c0";
     if(ready)color="#07df91";
     else if(value.contains("ошиб",Qt::CaseInsensitive)||value.contains("отклон",Qt::CaseInsensitive))color="#ff8484";
-    else if(value=="Подключение"||value.contains("подтверд",Qt::CaseInsensitive)||value.contains("заверша",Qt::CaseInsensitive)||value.contains("ищем",Qt::CaseInsensitive)||value.contains("эфир не найден",Qt::CaseInsensitive))color="#ffdc45";
-    const QString shown=english?englishStatus(value):value;
+    else if(value=="Подключение"||value=="Восстанавливаем"||value.contains("подтверд",Qt::CaseInsensitive)||value.contains("заверша",Qt::CaseInsensitive)||value.contains("ищем",Qt::CaseInsensitive)||value.contains("эфир не найден",Qt::CaseInsensitive))color="#ffdc45";
+    const QString shown=ready?(english?"Chat + send":"Чат + отправка"):(english?englishStatus(value):value);
     const bool changed=label->property("statusShown").isValid()&&label->property("statusShown").toString()!=shown;
     if(english){const auto http=raw.indexOf("(HTTP ");label->setToolTip(http<0?shown:shown+" "+raw.mid(http));}
     else label->setToolTip(raw);
@@ -366,7 +368,7 @@ public:
 
         lastMessage_=new QLabel;lastMessage_->setObjectName("Hint");lastMessage_->setWordWrap(true);chatLayout->addWidget(lastMessage_);
         auto* composerCard=card();auto* composerLayout=new QVBoxLayout(composerCard);composerLayout->setContentsMargins(8,7,8,8);composerLayout->setSpacing(5);auto* composer=new QHBoxLayout;input_=new QLineEdit;input_->setMaxLength(500);input_->setPlaceholderText("Написать в чат…");send_=new QPushButton("Отправить");send_->setObjectName("Primary");composer->addWidget(input_,1);composer->addWidget(send_);composerLayout->addLayout(composer);delivery_=new QLabel;delivery_->setObjectName("Hint");delivery_->setWordWrap(true);delivery_->setTextFormat(Qt::PlainText);delivery_->hide();composerLayout->addWidget(delivery_);layout->addWidget(composerCard);
-        auto* footer=new QVBoxLayout;footer->setContentsMargins(0,0,0,0);footer->setSpacing(0);auto* version=new QLabel("developed by <a href=\"https://www.youtube.com/channel/UCTAKYR3T2Ud8zZgNShgQfyw/\" style=\"color:#59dfff;text-decoration:none;\">OTMOPOZOK</a> · v" STREAM_CHAT_VERSION);version->setObjectName("Credit");version->setTextFormat(Qt::RichText);version->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);version->setOpenExternalLinks(true);version->setAlignment(Qt::AlignCenter);version->setFixedHeight(20);footer->addWidget(version);layout->addLayout(footer);
+        auto* footer=new QVBoxLayout;footer->setContentsMargins(0,0,0,0);footer->setSpacing(0);auto* version=new QLabel("✦ <span style=\"color:#8ea1b8;\">by</span> <a href=\"https://www.youtube.com/channel/UCTAKYR3T2Ud8zZgNShgQfyw/\" style=\"color:#57dfd1;text-decoration:none;font-weight:700;\">OTMOPOZOK</a> <span style=\"color:#5e7790;\">·</span> <span style=\"color:#b3c5d7;\">v" STREAM_CHAT_VERSION "</span>");version->setObjectName("Credit");version->setTextFormat(Qt::RichText);version->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);version->setOpenExternalLinks(true);version->setAlignment(Qt::AlignCenter);version->setFixedHeight(22);version->setToolTip("Stream Chat · OTMOPOZOK");footer->addWidget(version);layout->addLayout(footer);
         batch_.setInterval(20);batch_.setSingleShot(true);trafficTimer_.setInterval(2000);
         emoteRedraw_.setSingleShot(true);emoteRedraw_.setInterval(120);
         connect(&emoteRedraw_,&QTimer::timeout,this,[this]{redrawMessages();});
@@ -729,7 +731,7 @@ private:
         kickViewers_->setVisible(kickEnabled_&&streaming_&&kick_.viewerCount()>=0);
         if(kick_.viewerCount()>=0){kickViewers_->setText("👥 "+ru.toString(kick_.viewerCount()));kickViewers_->setStyleSheet(QString("color:%1;font-size:15px;font-weight:700;").arg(kick_.viewerFresh()?"#dfe8ff":"#8ea1c0"));kickViewers_->setToolTip(kick_.viewerFresh()?(english_?"Kick viewers now":"Смотрят Kick сейчас"):(english_?"Last known Kick viewer count":"Последнее известное число зрителей Kick"));}
         recipientPairs_.last()->setVisible(kickEnabled_);kickCard_->setVisible(kickEnabled_);kickTarget_->setVisible(kickEnabled_);paintStatus(kickStatus_,kick_.status(),"Kick",kick_.ready(),english_);
-        kickStatus_->setToolTip(kick_.status(english_));if(kick_.ready())kickStatus_->setText(kick_.canSend()?(english_?"● Connected":"● Подключён"):(english_?"● Read only":"● Только чтение"));
+        kickStatus_->setToolTip(kick_.status(english_));if(kick_.ready())kickStatus_->setText(kick_.canSend()?(english_?"● Chat + send":"● Чат + отправка"):(english_?"● Read only":"● Только чтение"));
         kickTarget_->setToolTip(kick_.canSend()?(english_?"Send to Kick":"Отправлять в Kick"):(english_?"Sign in to Kick in Settings to send":"Для отправки войдите в Kick в настройках"));
         kickLogin_->setText(english_?"Settings":"Настроить");kickLogin_->setVisible(!kick_.signedIn());kickLogout_->setVisible(kick_.signedIn());kickLogout_->setToolTip(english_?"Sign out of Kick":"Выйти из Kick");
         const bool showCounts=streaming_&&seenThisStream_;

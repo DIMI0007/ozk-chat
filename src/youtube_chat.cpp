@@ -249,7 +249,7 @@ void YouTubeChat::pollViewers(){
 void YouTubeChat::retry(){
     if(!visible_||retry_.isActive())return;
     attempts_=std::min(attempts_+1,6);
-    setStatus("YouTube: подключение");retry_.start(std::min(120000,1000*(1<<attempts_)));
+    setStatus("YouTube: восстанавливаем соединение");retry_.start(std::min(120000,1000*(1<<attempts_)));
 }
 void YouTubeChat::send(const QString& text){
     if(!ready_||text.trimmed().isEmpty()||text.size()>200){Q_EMIT sent(false,"YouTube: чат не готов или текст длиннее 200 символов");return;}

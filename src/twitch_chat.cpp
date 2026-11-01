@@ -232,7 +232,7 @@ void TwitchChat::retry(){
     if(socket_){socket_->disconnect(this);socket_->abort();socket_->deleteLater();socket_=nullptr;}
     if(replacement_){replacement_->disconnect(this);replacement_->abort();replacement_->deleteLater();replacement_=nullptr;}
     ready_=false;subscribed_=false;watchdog_.stop();Q_EMIT changed();
-    retries_=std::min(retries_+1,6);setStatus("Twitch: подключение");retryTimer_.start(std::min(120000,1000*(1<<retries_)));
+    retries_=std::min(retries_+1,6);setStatus("Twitch: восстанавливаем соединение");retryTimer_.start(std::min(120000,1000*(1<<retries_)));
 }
 void TwitchChat::send(const QString& text){
     if(!ready_||text.trimmed().isEmpty()||text.size()>500){Q_EMIT sent(false,"Twitch: чат не готов или текст длиннее 500 символов");return;}
