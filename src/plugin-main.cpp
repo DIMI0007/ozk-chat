@@ -85,6 +85,7 @@ extern "C" __declspec(dllexport) bool stream_chat_telemetry_v2(std::uint64_t* se
 
 #ifndef STREAM_CHAT_PREVIEW
 OBS_DECLARE_MODULE()
+OBS_MODULE_AUTHOR("DMITRII")
 OBS_MODULE_USE_DEFAULT_LOCALE("stream-chat-obs", "en-US")
 #endif
 namespace {
@@ -326,7 +327,7 @@ public:
         setObjectName("StreamChatRoot");setMinimumWidth(275);setStyleSheet(ChatStyle);
         pages_=new QStackedLayout(this);auto* chatPage=new QWidget(this);pages_->addWidget(chatPage);
         auto* layout=new QVBoxLayout(chatPage);layout->setContentsMargins(8,8,8,8);layout->setSpacing(5);
-        auto* header=new QHBoxLayout;header->setContentsMargins(2,2,2,2);header->setSpacing(7);auto* brand=new PlatformBadge("Stream Chat");brand->setObjectName("HeaderBrand");header->addWidget(brand);auto* title=new QLabel("Stream Chat");title->setObjectName("Title");header->addWidget(title,1);settings_=new QPushButton;settings_->setObjectName("Settings");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);settings_->setToolTip("Настройки");settings_->setAccessibleName("Настройки");header->addWidget(settings_);layout->addLayout(header);
+        auto* header=new QHBoxLayout;header->setContentsMargins(2,2,2,2);header->setSpacing(7);auto* brand=new PlatformBadge("OZK Chat");brand->setObjectName("HeaderBrand");header->addWidget(brand);auto* title=new QLabel("<span style='color:#57dfd1'>OZK</span> Chat");title->setObjectName("Title");title->setTextFormat(Qt::RichText);title->setAccessibleName("OZK Chat");header->addWidget(title,1);settings_=new QPushButton;settings_->setObjectName("Settings");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);settings_->setToolTip("Настройки");settings_->setAccessibleName("Настройки");header->addWidget(settings_);layout->addLayout(header);
 
         auto* twitchCard=card();auto* twitchLayout=new QVBoxLayout(twitchCard);twitchLayout->setContentsMargins(8,6,8,6);twitchLayout->setSpacing(5);
         auto* twitchHead=new QHBoxLayout;twitchHead->setSpacing(6);twitchHead->addWidget(new PlatformBadge("Twitch"));twitchHead->addWidget(sectionTitle("Twitch"));twitchViewers_=new QLabel;twitchViewers_->setObjectName("Hint");twitchViewers_->setToolTip("Смотрят Twitch сейчас");twitchHead->addWidget(twitchViewers_);twitchStatus_=new QLabel;twitchStatus_->setAlignment(Qt::AlignRight|Qt::AlignVCenter);twitchStatus_->setWordWrap(true);twitchStatus_->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);twitchHead->addWidget(twitchStatus_,1);login_=new QPushButton("Войти");twitchHead->addWidget(login_);logout_=new QPushButton("×");logout_->setObjectName("Disconnect");logout_->setToolTip("Отключить Twitch");twitchHead->addWidget(logout_);twitchLayout->addLayout(twitchHead);
@@ -368,7 +369,7 @@ public:
 
         lastMessage_=new QLabel;lastMessage_->setObjectName("Hint");lastMessage_->setWordWrap(true);chatLayout->addWidget(lastMessage_);
         auto* composerCard=card();auto* composerLayout=new QVBoxLayout(composerCard);composerLayout->setContentsMargins(8,7,8,8);composerLayout->setSpacing(5);auto* composer=new QHBoxLayout;input_=new QLineEdit;input_->setMaxLength(500);input_->setPlaceholderText("Написать в чат…");send_=new QPushButton("Отправить");send_->setObjectName("Primary");composer->addWidget(input_,1);composer->addWidget(send_);composerLayout->addLayout(composer);delivery_=new QLabel;delivery_->setObjectName("Hint");delivery_->setWordWrap(true);delivery_->setTextFormat(Qt::PlainText);delivery_->hide();composerLayout->addWidget(delivery_);layout->addWidget(composerCard);
-        auto* footer=new QVBoxLayout;footer->setContentsMargins(0,0,0,0);footer->setSpacing(0);auto* version=new QLabel("✦ <span style=\"color:#8ea1b8;\">by</span> <a href=\"https://www.youtube.com/channel/UCTAKYR3T2Ud8zZgNShgQfyw/\" style=\"color:#57dfd1;text-decoration:none;font-weight:700;\">OTMOPOZOK</a> <span style=\"color:#5e7790;\">·</span> <span style=\"color:#b3c5d7;\">v" STREAM_CHAT_VERSION "</span>");version->setObjectName("Credit");version->setTextFormat(Qt::RichText);version->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);version->setOpenExternalLinks(true);version->setAlignment(Qt::AlignCenter);version->setFixedHeight(20);version->setToolTip("Stream Chat · OTMOPOZOK");footer->addWidget(version);layout->addLayout(footer);
+        auto* footer=new QVBoxLayout;footer->setContentsMargins(0,0,0,0);footer->setSpacing(0);auto* version=new QLabel("✦ <span style=\"color:#8ea1b8;\">by</span> <a href=\"https://www.youtube.com/channel/UCTAKYR3T2Ud8zZgNShgQfyw/\" style=\"color:#57dfd1;text-decoration:none;font-weight:700;\">OTMOPOZOK</a> <span style=\"color:#5e7790;\">·</span> <span style=\"color:#b3c5d7;\">v" STREAM_CHAT_VERSION "</span>");version->setObjectName("Credit");version->setTextFormat(Qt::RichText);version->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);version->setOpenExternalLinks(true);version->setAlignment(Qt::AlignCenter);version->setFixedHeight(20);version->setToolTip("OZK Chat · OTMOPOZOK");footer->addWidget(version);layout->addLayout(footer);
         batch_.setInterval(20);batch_.setSingleShot(true);trafficTimer_.setInterval(2000);
         emoteRedraw_.setSingleShot(true);emoteRedraw_.setInterval(120);
         connect(&emoteRedraw_,&QTimer::timeout,this,[this]{redrawMessages();});
@@ -530,7 +531,7 @@ private:
             if(youtube)connect(&youtube_,&sc::YouTubeChat::changed,page,update);else connect(&twitch_,&sc::TwitchChat::changed,page,update);
             auto persist=[this,youtube,id,secret]{if(activeSends_)return false;return youtube?youtube_.configure(id->text(),secret->text()):twitch_.configure(id->text());};
             connect(save,&QPushButton::clicked,page,[persist]{persist();});connect(login,&QPushButton::clicked,page,[this,youtube,persist]{if(persist()){if(youtube)youtube_.signIn();else twitch_.signIn();}});
-            connect(instructions,&QPushButton::clicked,page,[youtube]{QDesktopServices::openUrl(QUrl(QString("https://github.com/DIMI0007/stream-chat-obs/blob/main/docs/REGISTER_APPS_RU.md#")+(youtube?"youtube":"twitch")));});
+            connect(instructions,&QPushButton::clicked,page,[youtube]{QDesktopServices::openUrl(QUrl(QString("https://github.com/DIMI0007/ozk-chat/blob/main/docs/REGISTER_APPS_RU.md#")+(youtube?"youtube":"twitch")));});
         };
         addPersonalAccount(false);addPersonalAccount(true);
         auto* kickCard=new QWidget;kickCard->setObjectName("LanguageCard");outer->addWidget(kickCard);
@@ -552,7 +553,7 @@ private:
         auto* guide=new QLabel;guide->setObjectName("KickSetupGuide");guide->setWordWrap(true);guide->setTextFormat(Qt::PlainText);guide->setTextInteractionFlags(Qt::TextSelectableByMouse);guide->setStyleSheet("font-weight:400;color:#b8c7df;");guide->hide();accountLayout->addWidget(guide);
         auto* developerPage=new QPushButton;developerPage->setObjectName("AccountGuide");guideActions->addWidget(developerPage,1);accountLayout->addLayout(guideActions);
         auto* githubGuide=new QPushButton;githubGuide->setObjectName("AccountGuide");accountLayout->addWidget(githubGuide);githubGuide->setText(english_?"Connection guide on GitHub":"Инструкция подключения в GitHub");
-        connect(githubGuide,&QPushButton::clicked,page,[]{QDesktopServices::openUrl(QUrl("https://github.com/DIMI0007/stream-chat-obs/blob/main/docs/REGISTER_APPS_RU.md#kick"));});
+        connect(githubGuide,&QPushButton::clicked,page,[]{QDesktopServices::openUrl(QUrl("https://github.com/DIMI0007/ozk-chat/blob/main/docs/REGISTER_APPS_RU.md#kick"));});
         for(auto* choice:*choices)connect(choice,&QPushButton::clicked,page,[this,githubGuide]{githubGuide->setText(english_?"Connection guide on GitHub":"Инструкция подключения в GitHub");});
         connect(developerPage,&QPushButton::clicked,page,[]{QDesktopServices::openUrl(QUrl("https://kick.com/settings/developer"));});
         connect(guideToggle,&QPushButton::toggled,guide,&QWidget::setVisible);
@@ -565,8 +566,8 @@ private:
             signIn->setEnabled(!kick_.busy());signOut->setVisible(kick_.signedIn());accountStatus->setText(kick_.status(english_));
             guideToggle->setText(english_?"Setup steps":"Как подключить");developerPage->setText(english_?"Kick applications":"Приложения Kick");
             guide->setText(english_?
-                "1. Open Kick developer settings and choose Create application. Enable two-factor authentication if Kick asks.\n\n2. Use a name without spaces, such as StreamChatOBSPersonal. Add a short description.\n\n3. Paste the Redirect URL shown above. Leave webhooks disabled.\n\n4. Select Read channel information (channel:read) and Write to chat (chat:write). Kick also requires Read user information (user:read), including email. Leave other permissions off.\n\n5. Create the application after reviewing Kick's developer terms. Copy Client ID and Client Secret into these fields. The secret is not your stream key.\n\n6. Enter your channel name, save, and choose Sign in to Kick. Confirm access on Kick in your browser.\n\nReading uses Kick's website chat connection, which may change. Sending uses the official Kick API. Disabling Kick stops its connections and keeps your saved account.":
-                "1. Откройте приложения Kick и нажмите «Создать приложение». Включите двухфакторную защиту, если Kick попросит.\n\n2. Название — без пробелов, например StreamChatOBSPersonal. Добавьте короткое описание.\n\n3. Вставьте Redirect URL из поля выше. Webhooks оставьте выключенными.\n\n4. Выберите чтение канала (channel:read) и отправку в чат (chat:write). Kick также требует чтение профиля (user:read), включая email. Остальные права не нужны.\n\n5. Ознакомьтесь с условиями разработчика Kick и создайте приложение. Скопируйте Client ID и Client Secret в эти поля. Secret — это не ключ трансляции.\n\n6. Введите имя своего канала, сохраните и нажмите «Войти в Kick». Подтвердите доступ в браузере на сайте Kick.\n\nЧтение использует соединение чата сайта Kick, которое может измениться. Отправка работает через официальный API Kick. Выключение Kick останавливает подключения и сохраняет аккаунт.");
+                "1. Open Kick developer settings and choose Create application. Enable two-factor authentication if Kick asks.\n\n2. Use a name without spaces, such as OZKChatPersonal. Add a short description.\n\n3. Paste the Redirect URL shown above. Leave webhooks disabled.\n\n4. Select Read channel information (channel:read) and Write to chat (chat:write). Kick also requires Read user information (user:read), including email. Leave other permissions off.\n\n5. Create the application after reviewing Kick's developer terms. Copy Client ID and Client Secret into these fields. The secret is not your stream key.\n\n6. Enter your channel name, save, and choose Sign in to Kick. Confirm access on Kick in your browser.\n\nReading uses Kick's website chat connection, which may change. Sending uses the official Kick API. Disabling Kick stops its connections and keeps your saved account.":
+                "1. Откройте приложения Kick и нажмите «Создать приложение». Включите двухфакторную защиту, если Kick попросит.\n\n2. Название — без пробелов, например OZKChatPersonal. Добавьте короткое описание.\n\n3. Вставьте Redirect URL из поля выше. Webhooks оставьте выключенными.\n\n4. Выберите чтение канала (channel:read) и отправку в чат (chat:write). Kick также требует чтение профиля (user:read), включая email. Остальные права не нужны.\n\n5. Ознакомьтесь с условиями разработчика Kick и создайте приложение. Скопируйте Client ID и Client Secret в эти поля. Secret — это не ключ трансляции.\n\n6. Введите имя своего канала, сохраните и нажмите «Войти в Kick». Подтвердите доступ в браузере на сайте Kick.\n\nЧтение использует соединение чата сайта Kick, которое может измениться. Отправка работает через официальный API Kick. Выключение Kick останавливает подключения и сохраняет аккаунт.");
         };
         updateKickSettings();for(auto* choice:*choices)connect(choice,&QPushButton::clicked,page,updateKickSettings);
         connect(&kick_,&sc::KickChat::changed,page,updateKickSettings);
@@ -792,7 +793,7 @@ void saveDockVisibility(){
 void createDock(){
     if(dock)return;
     auto* widget=new ChatDock;
-    if(!obs_frontend_add_dock_by_id(DockId,"Stream Chat",widget)){delete widget;return;}
+    if(!obs_frontend_add_dock_by_id(DockId,"OZK Chat",widget)){delete widget;return;}
     dock=widget;
     auto* window=static_cast<QMainWindow*>(obs_frontend_get_main_window());
     auto* panel=window?window->findChild<QDockWidget*>(DockId):nullptr;
@@ -818,10 +819,11 @@ void onFrontendEvent(enum obs_frontend_event event,void*){
 #endif
 }
 #ifndef STREAM_CHAT_PREVIEW
+MODULE_EXPORT const char* obs_module_name(void){return "OZK Chat";}
 bool obs_module_load(void){
     char* path=obs_module_file("qt-plugins");if(path){tlsPath=QString::fromUtf8(path);bfree(path);QCoreApplication::addLibraryPath(tlsPath);}
     if(!QSslSocket::supportsSsl()&&QSslSocket::availableBackends().contains("schannel"))QSslSocket::setActiveBackend("schannel");
-    obs_frontend_add_event_callback(onFrontendEvent,nullptr);blog(LOG_INFO,"Stream Chat OBS %s loaded; HTTPS: %s",STREAM_CHAT_VERSION,QSslSocket::supportsSsl()?"available":"unavailable");return true;
+    obs_frontend_add_event_callback(onFrontendEvent,nullptr);blog(LOG_INFO,"OZK Chat %s loaded; HTTPS: %s",STREAM_CHAT_VERSION,QSslSocket::supportsSsl()?"available":"unavailable");return true;
 }
 void obs_module_unload(void){obs_frontend_remove_event_callback(onFrontendEvent,nullptr);if(dock)obs_frontend_remove_dock(DockId);dock=nullptr;if(!tlsPath.isEmpty())QCoreApplication::removeLibraryPath(tlsPath);tlsPath.clear();}
 #endif

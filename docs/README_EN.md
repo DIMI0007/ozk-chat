@@ -1,8 +1,8 @@
-# Stream Chat OBS
+# OZK Chat
 
 **Twitch, YouTube and Kick chats in one OBS dock.** The plugin runs on your computer without a project-operated server. [Русский](../README.md).
 
-![Stream Chat English interface](screenshots/chat-en.png)
+![OZK Chat English interface](screenshots/chat-en.png)
 
 *Version 0.4.2 UI preview from an isolated test host; messages and connections are sample data.* [Russian interface](screenshots/chat-ru.png) · [Narrow dock](screenshots/chat-narrow-ru.png) · [Settings](screenshots/settings-en.png).
 
@@ -21,13 +21,13 @@
 
 Version 0.4.2 uses personal developer applications for Twitch, YouTube and Kick. Each account section has a setup guide link. Enable Kick to show its card and green K marker. Kick reading only needs a channel name; sending requires sign-in. YouTube messages show the author's avatar, while Twitch and Kick keep their platform icons in the same aligned slot. Avatar downloads and cache size are limited. Kick reading, sign-in, token refresh and sending were verified with a real account.
 
-Stream Chat works on its own. Stream Stats can read Chat's local CPU, tracked data and traffic counters when installed. Stream Notify may use Chat's saved Twitch and YouTube sign-ins and its Kick channel name to check live status; it does not change Chat's account data.
+OZK Chat works on its own. OZK Stats can read Chat's local CPU, tracked data and traffic counters when installed. OZK Notify may use Chat's saved Twitch and YouTube sign-ins and its Kick channel name to check live status; it does not change Chat's account data.
 
 ## Install
 
-1. Close OBS and [download the latest successful build](https://github.com/DIMI0007/stream-chat-obs/actions/workflows/build-windows.yml).
+1. Close OBS and [download the latest successful build](https://github.com/DIMI0007/ozk-chat/actions/workflows/build-windows.yml).
 2. Copy the entire `stream-chat-obs` folder into `C:\ProgramData\obs-studio\plugins\`. Replace the whole folder when updating.
-3. Start OBS, open the **Stream Chat** dock, and sign in to the services you use.
+3. Start OBS, open the **OZK Chat** dock, and sign in to the services you use.
 
 Target: **OBS 33, Windows x64**. `BUILD_INFO.json` in the archive identifies the version and source revision. The build is currently unsigned.
 

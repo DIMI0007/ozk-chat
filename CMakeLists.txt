@@ -8,7 +8,7 @@ include(defaults)
 include(helpers)
 
 if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-  message(FATAL_ERROR "Stream Chat OBS currently targets Windows x64 only")
+  message(FATAL_ERROR "OZK Chat currently targets Windows x64 only")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

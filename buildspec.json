@@ -31,9 +31,9 @@
     }
   },
   "name": "stream-chat-obs",
-  "displayName": "Stream Chat OBS",
-  "version": "0.4.3",
-  "author": "Stream Chat OBS Contributors",
-  "website": "https://github.com",
-  "email": "stream-chat-obs@example.invalid"
+  "displayName": "OZK Chat",
+  "version": "0.4.4",
+  "author": "DMITRII",
+  "website": "https://github.com/DIMI0007/ozk-chat",
+  "email": ""
 }
