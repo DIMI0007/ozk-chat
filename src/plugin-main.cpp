@@ -34,6 +34,8 @@
 #include <QIcon>
 #include <QSlider>
 #include <QStackedLayout>
+#include <QStackedWidget>
+#include <QGridLayout>
 #include <memory>
 #include <QRegularExpression>
 #include <QGraphicsOpacityEffect>
@@ -431,17 +433,69 @@ private:
     void openSettings(){
         if(pages_->count()>1){pages_->setCurrentIndex(1);return;}
         auto* page=new QWidget(this);page->setObjectName("SettingsPage");pages_->addWidget(page);pages_->setCurrentWidget(page);
-        page->setStyleSheet("QWidget#SettingsPage{background:#080f18;color:#dfe8ff;} QWidget#LanguageCard,QWidget#TwitchPersonalSettings,QWidget#YouTubePersonalSettings{background:#0d1724;border:1px solid #2b3d54;border-radius:9px;} QLabel{color:#dfe8ff;font-weight:700;} QPushButton{color:#dfe8ff;background:#172236;border:1px solid #354863;border-radius:7px;padding:5px 8px;} QPushButton#ActiveNav{background:#18234e;border-color:#7663ff;color:#ffffff;font-weight:700;} QPushButton#AccountPrimary{background:#123b34;border-color:#139e78;color:#d8fff3;font-weight:700;} QPushButton#AccountGuide{background:#101c2b;color:#9fc8e0;}");
+        page->setStyleSheet(R"(
+            QWidget#SettingsPage,QWidget#SettingsContent{background:#080f18;color:#dfe8ff;font-family:'Segoe UI';font-size:12px;}
+            QWidget#LanguageCard,QWidget#TwitchPersonalSettings,QWidget#YouTubePersonalSettings{
+                background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #101925,stop:1 #0b131e);
+                border:1px solid #263244;border-radius:8px;}
+            QLabel{color:#dfe8ff;background:transparent;font-weight:400;}
+            QLabel#Title{color:#e7fff4;font-size:17px;font-weight:700;}
+            QLabel#Section{color:#edf3ff;font-size:13px;font-weight:700;}
+            QLabel#Hint{color:#8ea1c0;font-size:11px;}
+            QPushButton{color:#e1ebff;background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #202a3b,stop:1 #141d2b);
+                border:1px solid #39465d;border-radius:8px;min-height:20px;padding:3px 7px;}
+            QPushButton:hover{background:#26344d;border-color:#6476a0;}
+            QPushButton:focus{border-color:#8a79ff;}
+            QPushButton:pressed{background:#111b30;}
+            QPushButton#ActiveNav,QPushButton[active="true"]{background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #18203c,stop:1 #111e50);
+                border:1px solid #303e6c;border-bottom:2px solid #6547ff;font-weight:700;}
+            QLineEdit,QTextEdit{color:#e7eeff;background:#0c1420;border:1px solid #344865;border-radius:6px;padding:4px;selection-background-color:#316ac4;}
+            QLineEdit:focus,QTextEdit:focus{border-color:#776af5;background:#111c2e;}
+            QCheckBox{color:#dce7fb;spacing:6px;min-height:20px;}
+            QCheckBox::indicator{width:16px;height:16px;}
+            QCheckBox::indicator:unchecked{border-radius:4px;background:#344357;border:1px solid #65748d;}
+            QCheckBox::indicator:checked{border-radius:4px;background:#00d37d;border:1px solid #2ff9a0;}
+            QSlider::groove:horizontal{height:5px;background:#25354a;border-radius:2px;}
+            QSlider::sub-page:horizontal{background:#38b9d2;border-radius:2px;}
+            QSlider::handle:horizontal{background:#e1ebff;border:1px solid #9badc2;width:14px;margin:-5px 0;border-radius:7px;}
+        )");
         auto* outer=new QVBoxLayout(page);outer->setContentsMargins(8,8,8,8);outer->setSpacing(8);
         auto* head=new QHBoxLayout;auto* back=new QPushButton(english_?"← Back":"← Назад");head->addWidget(back);auto* title=new QLabel(english_?"Settings":"Настройки");title->setObjectName("Title");head->addWidget(title,1);outer->addLayout(head);
-        auto* settingsScroll=new QScrollArea;settingsScroll->setWidgetResizable(true);settingsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        settingsScroll->setStyleSheet("QScrollArea{border:0;background:#080f18;} QCheckBox{color:#dfe8ff;background:transparent;} QLineEdit{color:#dfe8ff;background:#0c1420;border:1px solid #344865;border-radius:5px;padding:4px;}");
-        settingsScroll->viewport()->setStyleSheet("background:#080f18;");
-        auto* settingsContent=new QWidget;settingsContent->setObjectName("SettingsContent");settingsContent->setStyleSheet("QWidget#SettingsContent{background:#080f18;}");settingsScroll->setWidget(settingsContent);outer->addWidget(settingsScroll,1);
-        outer=new QVBoxLayout(settingsContent);outer->setContentsMargins(0,0,0,0);outer->setSpacing(12);
+        auto* tabs=new QGridLayout;tabs->setContentsMargins(0,0,0,0);tabs->setSpacing(4);
+        auto* sections=new QStackedWidget;sections->setObjectName("SettingsSections");
+        auto nav=std::make_shared<QVector<QPushButton*>>();
+        const QString platforms[]={QString(),"Twitch","YouTube","Kick"};
+        for(int i=0;i<4;++i){
+            auto* button=new QPushButton(i==0?(english_?"General":"Общие"):platforms[i]);
+            button->setObjectName(i==0?"SettingsNavGeneral":"SettingsNav"+platforms[i]);
+            if(i==0)button->setIcon(settingsIcon());
+            else button->setIcon(QIcon(messagePlatformIcon(platforms[i])));
+            button->setIconSize(QSize(16,16));
+            if(i==0)button->setProperty("active",true);
+            tabs->addWidget(button,i/2,i%2);nav->push_back(button);
+            connect(button,&QPushButton::clicked,page,[sections,nav,i]{
+                sections->setCurrentIndex(i);
+                for(int n=0;n<nav->size();++n){
+                    auto* tab=nav->at(n);tab->setProperty("active",n==i);
+                    tab->style()->unpolish(tab);tab->style()->polish(tab);
+                }
+            });
+        }
+        outer->addLayout(tabs);outer->addWidget(sections,1);
+        auto makeSection=[sections](const char* name){
+            auto* scroll=new QScrollArea;scroll->setWidgetResizable(true);
+            scroll->setObjectName(name);
+            scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            scroll->setStyleSheet("QScrollArea{border:0;background:#080f18;}");
+            scroll->viewport()->setStyleSheet("background:#080f18;");
+            auto* content=new QWidget;content->setObjectName("SettingsContent");
+            auto* column=new QVBoxLayout(content);column->setContentsMargins(0,0,0,0);column->setSpacing(7);
+            scroll->setWidget(content);sections->addWidget(scroll);return column;
+        };
+        outer=makeSection("SettingsGeneralScroll");
         connect(back,&QPushButton::clicked,page,[this,page]{pages_->setCurrentIndex(0);pages_->removeWidget(page);page->deleteLater();});
         auto* card=new QWidget(page);card->setObjectName("LanguageCard");outer->addWidget(card);
-        auto* layout=new QVBoxLayout(card);layout->setContentsMargins(8,6,8,8);layout->setSpacing(4);
+        auto* layout=new QVBoxLayout(card);layout->setContentsMargins(9,7,9,8);layout->setSpacing(5);
         auto* label=new QLabel(english_?"Interface language":"Язык интерфейса");layout->addWidget(label);
         auto* line=new QHBoxLayout;line->setSpacing(4);
         const struct {const char* code;QString title;} languages[]={
@@ -452,10 +506,11 @@ private:
             auto* choice=new QPushButton(item.title);choice->setCheckable(true);choice->setChecked(language_==item.code);
             if(choice->isChecked())choice->setObjectName("ActiveNav");
             const QString code=QString::fromLatin1(item.code);
-            connect(choice,&QPushButton::clicked,page,[this,label,title,back,choices,code]{
+            connect(choice,&QPushButton::clicked,page,[this,label,title,back,choices,nav,code]{
                 language_=code;english_=language_=="en"||(language_=="auto"&&obsLanguageIsEnglish());
                 QSettings saved(configPath("ui.ini"),QSettings::IniFormat);saved.setValue("language",language_);saved.sync();applyLanguage();
                 title->setText(english_?"Settings":"Настройки");back->setText(english_?"← Back":"← Назад");label->setText(english_?"Interface language":"Язык интерфейса");
+                 nav->at(0)->setText(english_?"General":"Общие");
                 (*choices)[0]->setText(english_?"Auto":"Авто");
                 for(auto* button:*choices){button->setChecked(button->property("localeCode").toString()==language_);button->setObjectName(button->isChecked()?"ActiveNav":"");button->style()->unpolish(button);button->style()->polish(button);}
             });
@@ -472,7 +527,7 @@ private:
             row->addWidget(help);column->addLayout(row);return name;
         };
         auto* scaleCard=new QWidget(page);scaleCard->setObjectName("LanguageCard");scaleCard->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Maximum);outer->addWidget(scaleCard);
-        auto* scaleLayout=new QVBoxLayout(scaleCard);scaleLayout->setContentsMargins(8,6,8,8);scaleLayout->setSpacing(4);
+        auto* scaleLayout=new QVBoxLayout(scaleCard);scaleLayout->setContentsMargins(9,7,9,8);scaleLayout->setSpacing(5);
         auto* scaleTitle=new QLabel(english_?"Chat text size":"Размер текста чата");scaleLayout->addWidget(scaleTitle);
         auto* scaleRow=new QHBoxLayout;auto* slider=new QSlider(Qt::Horizontal);slider->setRange(80,140);slider->setSingleStep(5);slider->setPageStep(10);slider->setValue(textScale_);scaleRow->addWidget(slider,1);
         auto* percent=new QLabel(QString::number(textScale_)+" %");scaleRow->addWidget(percent);scaleLayout->addLayout(scaleRow);
@@ -492,7 +547,7 @@ private:
             textScale_=value;applyChatTextSize();redrawMessages();updatePreview();
             QSettings saved(configPath("ui.ini"),QSettings::IniFormat);saved.setValue("textScale",textScale_);saved.sync();
         });
-        auto* filters=new QWidget;filters->setObjectName("LanguageCard");auto* filterLayout=new QVBoxLayout(filters);filterLayout->setContentsMargins(10,10,10,10);filterLayout->setSpacing(7);
+        auto* filters=new QWidget;filters->setObjectName("LanguageCard");auto* filterLayout=new QVBoxLayout(filters);filterLayout->setContentsMargins(9,7,9,8);filterLayout->setSpacing(6);
         auto* highlight=new QCheckBox(english_?"Highlight mentions":"Выделять упоминания");highlight->setChecked(highlightMentions_);filterLayout->addWidget(highlight);
         auto* namesLabel=new QLabel(english_?"Your names, separated by commas":"Ваши имена через запятую");namesLabel->setWordWrap(true);filterLayout->addWidget(namesLabel);
         auto* names=new QLineEdit(mentionNames_);names->setMaxLength(500);names->setPlaceholderText(english_?"Twitch login is detected automatically":"Имя Twitch определяется автоматически");filterLayout->addWidget(names);
@@ -510,10 +565,12 @@ private:
         connect(highlight,&QCheckBox::toggled,page,[saveFilters](bool){saveFilters();});
         connect(hideBots,&QCheckBox::toggled,page,[saveFilters](bool){saveFilters();});
         connect(names,&QLineEdit::editingFinished,page,saveFilters);connect(bots,&QLineEdit::editingFinished,page,saveFilters);
-        auto addPersonalAccount=[this,page,outer,choices,accountLabel](bool youtube){
+        outer->addStretch();
+        auto* twitchSection=makeSection("SettingsTwitchScroll");auto* youtubeSection=makeSection("SettingsYouTubeScroll");
+        auto addPersonalAccount=[this,page,choices,accountLabel](bool youtube,QVBoxLayout* destination){
             auto* group=new QWidget;group->setObjectName(youtube?"YouTubePersonalSettings":"TwitchPersonalSettings");
-            outer->addWidget(group);
-            auto* box=new QVBoxLayout(group);box->setContentsMargins(11,10,11,11);box->setSpacing(8);
+            destination->addWidget(group);
+            auto* box=new QVBoxLayout(group);box->setContentsMargins(9,7,9,8);box->setSpacing(6);
             box->addWidget(sectionTitle(youtube?"YouTube":"Twitch"));
             auto* hint=new QLabel;hint->setWordWrap(true);hint->setStyleSheet("font-weight:400;color:#8ea1c0;");box->addWidget(hint);
             accountLabel(box,"Client ID",youtube?"YouTubeClientId":"TwitchClientId",youtube?"Идентификатор вашего приложения Google для компьютера. Скопируйте в Google Cloud → Google Auth platform → Clients.":"Публичный идентификатор вашего приложения Twitch. Скопируйте в Twitch Developer Console → Applications.",youtube?"Your Google desktop application's identifier. Copy it from Google Cloud → Google Auth platform → Clients.":"Your public Twitch application identifier. Copy it from Twitch Developer Console → Applications.");auto* id=new QLineEdit(youtube?youtube_.clientId():twitch_.clientId());id->setMaxLength(240);id->setObjectName(youtube?"YouTubeClientId":"TwitchClientId");box->addWidget(id);
@@ -533,9 +590,11 @@ private:
             connect(save,&QPushButton::clicked,page,[persist]{persist();});connect(login,&QPushButton::clicked,page,[this,youtube,persist]{if(persist()){if(youtube)youtube_.signIn();else twitch_.signIn();}});
             connect(instructions,&QPushButton::clicked,page,[youtube]{QDesktopServices::openUrl(QUrl(QString("https://github.com/DIMI0007/ozk-chat/blob/main/docs/REGISTER_APPS_RU.md#")+(youtube?"youtube":"twitch")));});
         };
-        addPersonalAccount(false);addPersonalAccount(true);
+        addPersonalAccount(false,twitchSection);twitchSection->addStretch();
+        addPersonalAccount(true,youtubeSection);youtubeSection->addStretch();
+        outer=makeSection("SettingsKickScroll");
         auto* kickCard=new QWidget;kickCard->setObjectName("LanguageCard");outer->addWidget(kickCard);
-        auto* kickLayout=new QVBoxLayout(kickCard);kickLayout->setContentsMargins(11,10,11,11);kickLayout->setSpacing(8);
+        auto* kickLayout=new QVBoxLayout(kickCard);kickLayout->setContentsMargins(9,7,9,8);kickLayout->setSpacing(6);
         auto* enableKick=new QCheckBox;enableKick->setObjectName("EnableKick");enableKick->setChecked(kickEnabled_);kickLayout->addWidget(enableKick);
         auto* account=new QWidget;account->setObjectName("KickAccountSettings");auto* accountLayout=new QVBoxLayout(account);accountLayout->setContentsMargins(0,2,0,0);accountLayout->setSpacing(8);kickLayout->addWidget(account);account->setVisible(kickEnabled_);
         auto addField=[accountLayout,accountLabel](const QString& name,QLineEdit* field,const QString& ruHelp,const QString& enHelp){auto* label=accountLabel(accountLayout,name,field->objectName(),ruHelp,enHelp);accountLayout->addWidget(field);return label;};

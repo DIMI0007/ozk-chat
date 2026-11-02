@@ -91,10 +91,14 @@ int main(int argc,char** argv){
         auto* settings=dock.findChild<QPushButton*>("Settings");settings->click();app.processEvents();
         auto* page=dock.findChild<QWidget*>("SettingsPage");auto* toggle=page->findChild<QCheckBox*>("EnableKick");
         auto* account=page->findChild<QWidget*>("KickAccountSettings");
+        auto* kickTab=page->findChild<QPushButton*>("SettingsNavKick");
+        auto* kickScroll=page->findChild<QScrollArea*>("SettingsKickScroll");
+        if(!kickTab||!kickScroll)return previewResult(23);
+        kickTab->click();app.processEvents();
         if(!toggle||!account||toggle->isChecked()||account->isVisible())return previewResult(23);
         toggle->setChecked(true);app.processEvents();if(!account->isVisible()||card->isHidden())return previewResult(24);
         auto* secret=account->findChild<QLineEdit*>("KickClientSecret");if(!secret||secret->echoMode()!=QLineEdit::Password)return previewResult(25);
-        auto* scroll=page->findChild<QScrollArea*>();scroll->ensureWidgetVisible(account,0,0);app.processEvents();
+        auto* scroll=kickScroll;scroll->ensureWidgetVisible(account,0,0);app.processEvents();
         if(dock.width()!=width)return previewResult(26);
         if(!dock.grab().save(output+"/kick-settings-"+language+"-"+QString::number(width)+".png"))return previewResult(27);
         auto* guide=account->findChild<QLabel*>("KickSetupGuide");account->findChild<QPushButton*>("KickGuideToggle")->click();app.processEvents();
@@ -116,7 +120,9 @@ int main(int argc,char** argv){
         }
         if(dock.width()!=width||!dock.grab().save(output+"/kick-message-counts-"+language+"-"+QString::number(width)+".png"))return previewResult(38);
         dock.previewCounters(123456789,987654321,123456789);app.processEvents();if(dock.width()!=width)return previewResult(39);
-        settings->click();app.processEvents();page=dock.findChild<QWidget*>("SettingsPage");page->findChild<QCheckBox*>("EnableKick")->setChecked(false);app.processEvents();
+        settings->click();app.processEvents();page=dock.findChild<QWidget*>("SettingsPage");
+        page->findChild<QPushButton*>("SettingsNavKick")->click();app.processEvents();
+        page->findChild<QCheckBox*>("EnableKick")->setChecked(false);app.processEvents();
         if(!card->isHidden()||page->findChild<QWidget*>("KickAccountSettings")->isVisible())return previewResult(33);
         dock.hide();app.processEvents();
     }
