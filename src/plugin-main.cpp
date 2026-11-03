@@ -1,3 +1,4 @@
+#include "ozk_performance.hpp"
 #include <obs-frontend-api.h>
 #include <obs-module.h>
 #include <util/bmem.h>
@@ -47,6 +48,8 @@
 #include <QMetaObject>
 #include <QLocale>
 #include <QElapsedTimer>
+#include <QTextBlock>
+#include <QTextFragment>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -372,9 +375,9 @@ public:
         lastMessage_=new QLabel;lastMessage_->setObjectName("Hint");lastMessage_->setWordWrap(true);chatLayout->addWidget(lastMessage_);
         auto* composerCard=card();auto* composerLayout=new QVBoxLayout(composerCard);composerLayout->setContentsMargins(8,7,8,8);composerLayout->setSpacing(5);auto* composer=new QHBoxLayout;input_=new QLineEdit;input_->setMaxLength(500);input_->setPlaceholderText("Написать в чат…");send_=new QPushButton("Отправить");send_->setObjectName("Primary");composer->addWidget(input_,1);composer->addWidget(send_);composerLayout->addLayout(composer);delivery_=new QLabel;delivery_->setObjectName("Hint");delivery_->setWordWrap(true);delivery_->setTextFormat(Qt::PlainText);delivery_->hide();composerLayout->addWidget(delivery_);layout->addWidget(composerCard);
         auto* footer=new QVBoxLayout;footer->setContentsMargins(0,0,0,0);footer->setSpacing(0);auto* version=new QLabel("✦ <span style=\"color:#8ea1b8;\">by</span> <a href=\"https://www.youtube.com/channel/UCTAKYR3T2Ud8zZgNShgQfyw/\" style=\"color:#57dfd1;text-decoration:none;font-weight:700;\">OTMOPOZOK</a> <span style=\"color:#5e7790;\">·</span> <span style=\"color:#b3c5d7;\">v" STREAM_CHAT_VERSION "</span>");version->setObjectName("Credit");version->setTextFormat(Qt::RichText);version->setTextInteractionFlags(Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);version->setOpenExternalLinks(true);version->setAlignment(Qt::AlignCenter);version->setFixedHeight(20);version->setToolTip("OZK Chat · OTMOPOZOK");footer->addWidget(version);layout->addLayout(footer);
-        batch_.setInterval(20);batch_.setSingleShot(true);trafficTimer_.setInterval(2000);
-        emoteRedraw_.setSingleShot(true);emoteRedraw_.setInterval(120);
-        connect(&emoteRedraw_,&QTimer::timeout,this,[this]{redrawMessages();});
+        ozkperf::install();batch_.setInterval(20);batch_.setSingleShot(true);trafficTimer_.setInterval(2000);
+        emoteRedraw_.setSingleShot(true);emoteRedraw_.setInterval(750);
+        connect(&emoteRedraw_,&QTimer::timeout,this,[this]{refreshImages();});
         connect(&batch_,&QTimer::timeout,this,[this]{flush();});
         connect(scrollBottom_,&QPushButton::clicked,this,[this]{messages_->verticalScrollBar()->setValue(messages_->verticalScrollBar()->maximum());unread_=0;updateScrollButton();});
         connect(messages_->verticalScrollBar(),&QScrollBar::valueChanged,this,[this]{if(redrawing_)return;if(atBottom())unread_=0;updateScrollButton();});
@@ -680,7 +683,11 @@ private:
             sc::CpuScope cpu;pendingEmotes_.remove(id);
             const auto bytes=reply->readAll();sc::traffic::addReceived(bytes.size());
             const bool ok=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()==200&&bytes.size()<=65536;
-            QPixmap image;if(ok)image.loadFromData(bytes);reply->deleteLater();
+            QPixmap image;
+            if(ok){QBuffer buffer;buffer.setData(bytes);buffer.open(QIODevice::ReadOnly);
+                QImageReader reader(&buffer);const auto size=reader.size();
+                if(size.isValid()&&size.width()<=128&&size.height()<=128){reader.setScaledSize(QSize(20,20));image=QPixmap::fromImage(reader.read());}}
+            reply->deleteLater();
             if(image.isNull()||image.width()>128||image.height()>128){failedEmotes_.insert(id);return;}
             emotes_.insert(id,image.scaled(20,20,Qt::KeepAspectRatio,Qt::SmoothTransformation));
             emotesDirty_=true;if(isVisible()&&!emoteRedraw_.isActive())emoteRedraw_.start();
@@ -738,6 +745,22 @@ private:
     }
     bool atBottom()const{const auto* bar=messages_->verticalScrollBar();return bar->value()>=bar->maximum()-3;}
     void updateScrollButton(){scrollBottom_->setVisible(!atBottom()&&unread_>0);scrollBottom_->setText(unread_>0?"↓ "+QString::number(unread_):"↓");}
+    void refreshImages(){
+        auto* doc=messages_->document();
+        for(auto it=avatars_.cbegin();it!=avatars_.cend();++it)
+            doc->addResource(QTextDocument::ImageResource,QUrl("stream-chat://avatar/"+QString::fromUtf8(QUrl::toPercentEncoding(it.key()))),it.value());
+        struct Replacement{int position,length;QString id;};QVector<Replacement> replacements;
+        for(auto block=doc->begin();block.isValid();block=block.next())for(auto it=block.begin();!it.atEnd();++it){
+            const auto fragment=it.fragment();const auto id=fragment.charFormat().property(QTextFormat::UserProperty+1).toString();
+            if(!id.isEmpty()&&emotes_.contains(id))replacements.append({fragment.position(),fragment.length(),id});
+        }
+        for(auto it=replacements.crbegin();it!=replacements.crend();++it){
+            const auto resource=QUrl("stream-chat://emote/"+it->id);doc->addResource(QTextDocument::ImageResource,resource,emotes_.value(it->id));
+            QTextCursor cursor(doc);cursor.setPosition(it->position);cursor.setPosition(it->position+it->length,QTextCursor::KeepAnchor);
+            QTextImageFormat image;image.setName(resource.toString());image.setWidth(20);image.setHeight(20);cursor.insertImage(image);
+        }
+        doc->markContentsDirty(0,doc->characterCount());messages_->viewport()->update();emotesDirty_=false;
+    }
     void redrawMessages(){
         auto* bar=messages_->verticalScrollBar();const bool bottom=atBottom();const int oldPosition=bar->value();
         redrawing_=true;messages_->clear();
@@ -753,9 +776,9 @@ private:
         auto text=message.text,author=message.author;text.replace('\n',' ');text.replace('\r',' ');author.replace('\n',' ');author.replace('\r',' ');
         QTextCursor cursor(messages_->document());cursor.movePosition(QTextCursor::End);if(!messages_->document()->isEmpty())cursor.insertBlock();
         QTextBlockFormat block;block.setBackground(mentioned(message.text)?QColor("#193b34"):QColor(Qt::transparent));block.setLeftMargin(28);block.setTextIndent(-28);block.setTopMargin(4);block.setBottomMargin(4);cursor.setBlockFormat(block);
-        const bool hasAvatar=message.platform=="YouTube"&&avatars_.contains(message.authorId);
+        const bool hasAvatar=message.platform=="YouTube"&&!message.authorId.isEmpty();
         const auto avatarResource=QUrl("stream-chat://avatar/"+QString::fromUtf8(QUrl::toPercentEncoding(message.authorId)));
-        if(hasAvatar)messages_->document()->addResource(QTextDocument::ImageResource,avatarResource,avatars_.value(message.authorId));
+        if(hasAvatar)messages_->document()->addResource(QTextDocument::ImageResource,avatarResource,avatars_.contains(message.authorId)?avatars_.value(message.authorId):messagePlatformIcon("YouTube"));
         QTextImageFormat icon;icon.setName(hasAvatar?avatarResource.toString():message.platform=="Kick"?"stream-chat://icon/kick":message.platform=="YouTube"?"stream-chat://icon/youtube":"stream-chat://icon/twitch");icon.setWidth(24);icon.setHeight(24);cursor.insertImage(icon);cursor.insertText(" ");
         const bool youtube=message.platform=="YouTube";const QColor accent=message.platform=="Kick"?QColor("#8be965"):youtube?QColor("#ff8491"):QColor("#b995ff");const QColor tint=message.platform=="Kick"?QColor("#16311c"):youtube?QColor("#32181d"):QColor("#241b35");
         QTextCharFormat authorStyle;authorStyle.setForeground(accent);authorStyle.setBackground(tint);authorStyle.setFontWeight(QFont::DemiBold);cursor.insertText(" "+author+" ",authorStyle);
@@ -768,7 +791,8 @@ private:
                     messages_->document()->addResource(QTextDocument::ImageResource,resource,picture);
                     QTextImageFormat emote;emote.setName(resource.toString());emote.setWidth(picture.width());emote.setHeight(picture.height());cursor.insertImage(emote);
                 }else{
-                    auto part=fragment.text;part.replace('\n',' ');part.replace('\r',' ');cursor.insertText(part,messageStyle);
+                    auto part=fragment.text;part.replace('\n',' ');part.replace('\r',' ');
+                    auto pendingStyle=messageStyle;pendingStyle.setProperty(QTextFormat::UserProperty+1,fragment.emoteId);cursor.insertText(part,pendingStyle);
                     if(!fragment.emoteId.isEmpty())requestEmote(fragment.emoteId);
                 }
             }
@@ -825,7 +849,7 @@ private:
         --activeSends_;if(!activeSends_){if(allSent_)input_->clear();else {if(twitchSent_)target_->setChecked(false);if(youtubeSent_)youtubeTarget_->setChecked(false);if(kickSent_)kickTarget_->setChecked(false);}}
         delivery_->setText(results_.join('\n'));refresh();
     }
-    void flush(){sc::CpuScope cpu;int count=0;while(!pending_.isEmpty()&&count++<50){const auto message=pending_.dequeue();lastReceived_=QDateTime::currentDateTimeUtc();history_.enqueue(message);while(history_.size()>500)history_.dequeue();appendMessage(message);if(streaming_){if(message.platform=="Twitch")++twitchMessages_;else if(message.platform=="YouTube")++youtubeMessages_;else if(message.platform=="Kick")++kickMessages_;seenThisStream_=true;}}requestAvatars();refresh();if(!pending_.isEmpty())batch_.start();}
+    void flush(){ozkperf::Scope perf(Q_FUNC_INFO);sc::CpuScope cpu;QElapsedTimer budget;budget.start();int count=0;while(!pending_.isEmpty()&&count++<50&&budget.elapsed()<4){const auto message=pending_.dequeue();lastReceived_=QDateTime::currentDateTimeUtc();history_.enqueue(message);while(history_.size()>500)history_.dequeue();appendMessage(message);if(streaming_){if(message.platform=="Twitch")++twitchMessages_;else if(message.platform=="YouTube")++youtubeMessages_;else if(message.platform=="Kick")++kickMessages_;seenThisStream_=true;}}requestAvatars();refresh();if(!pending_.isEmpty())batch_.start();}
     template<class Predicate>void remove(Predicate predicate){
         history_.erase(std::remove_if(history_.begin(),history_.end(),predicate),history_.end());
         pending_.erase(std::remove_if(pending_.begin(),pending_.end(),predicate),pending_.end());
