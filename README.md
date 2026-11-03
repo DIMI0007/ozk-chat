@@ -10,9 +10,17 @@
 
 **Twitch, YouTube и Kick с личными приложениями — версия 0.4.2.** Для каждого используемого сервиса создаётся своё приложение по [нашей инструкции](docs/REGISTER_APPS_RU.md).
 
-![OZK Chat](docs/screenshots/chat-ru.png)
+## Как выглядит
 
-[Узкая панель](docs/screenshots/chat-narrow-ru.png) · [Настройки](docs/screenshots/settings-ru.png) · [English](docs/README_EN.md)
+Все снимки ниже сделаны с тестовыми сообщениями и пустыми полями входа. Личных данных и ключей на них нет.
+
+| Чат Twitch и YouTube | Общие настройки |
+| --- | --- |
+| ![Чат Twitch и YouTube](docs/screenshots/chat-ru.png) | ![Общие настройки](docs/screenshots/settings-ru.png) |
+| Подключение Kick | Сообщение Kick в общем чате |
+| ![Настройки Kick](docs/screenshots/kick-settings-ru-360.png) | ![Kick в чате](docs/screenshots/kick-chat-ru-360.png) |
+
+[Узкая панель](docs/screenshots/chat-narrow-ru.png) · [English](docs/README_EN.md)
 
 ## Что удобно
 
