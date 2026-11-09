@@ -204,7 +204,8 @@ void YouTubeChat::pollFallback(){
     request(url,"GET",{},true,[this,expectedChat](int http,const QJsonObject& data){
         fallbackPending_=false;if(!fallback_||chatId_!=expectedChat||!visible_)return;
         if(http==401){refresh();return;}
-        if(http==403||http==429){fallbackTimer_.stop();setStatus(QString("YouTube: чат недоступен или исчерпана квота API (HTTP %1)").arg(http));return;}
+        if(http==429){fallbackTimer_.start(120000);setStatus("YouTube: квота API ограничена; повторим через две минуты");return;}
+        if(http==403){fallbackTimer_.stop();setStatus("YouTube: нет доступа к чату (HTTP 403)");return;}
         if(http!=200){setStatus(QString("YouTube: повторное подключение (HTTP %1)").arg(http));fallbackTimer_.start(30000);return;}
         const auto token=data.value("nextPageToken").toString();if(!token.isEmpty())pageToken_=token;
         if(!ready_){ready_=true;attempts_=0;setStatus("YouTube: чат подключён через API");Q_EMIT changed();}
@@ -237,7 +238,11 @@ void YouTubeChat::pollViewers(){
         viewerRequest_=false;
         if(videoId_!=expectedVideo||!streamActive_)return;
         if(http==401){refresh();return;}
-        if(http==403||http==429){viewerTimer_.stop();Q_EMIT changed();return;}
+        if(http==403||http==429){
+            viewerTimer_.setInterval(http==429?120000:300000);
+            viewerCount_=-1;Q_EMIT changed();return;
+        }
+        viewerTimer_.setInterval(60000);
         if(http!=200){Q_EMIT changed();return;}
         const auto items=data.value("items").toArray();
         const auto details=items.isEmpty()?QJsonObject():items.first().toObject().value("liveStreamingDetails").toObject();
