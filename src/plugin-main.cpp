@@ -122,8 +122,8 @@ QPushButton#Primary:hover { background:#8af9d0; border-color:#c7ffea; }
 QPushButton#Primary:disabled { color:#71879b; background:#1a2b39; border-color:#314251; }
 QPushButton#Disconnect { color:#8ea1c0; background:#111b28; border:1px solid #304057; border-radius:7px; min-width:24px; max-width:24px; min-height:24px; max-height:24px; padding:0; font-size:16px; font-weight:700; }
 QPushButton#Disconnect:hover { color:#ff8d96; background:#2a1820; border-color:#8d4350; }
-QPushButton#Settings { color:#e1ebff; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #202a3b,stop:1 #141d2b); border:1px solid #39465d; border-radius:8px; padding:0; }
-QPushButton#Settings:hover { background:#26344d; border-color:#6476a0; }
+QPushButton#HeaderAction { color:#e1ebff; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #202a3b,stop:1 #141d2b); border:1px solid #39465d; border-radius:8px; padding:0; min-height:0; min-width:0; }
+QPushButton#HeaderAction:hover { background:#26344d; border-color:#6476a0; }
 QPushButton#ScrollBottom { color:#b7efff; background:#17283a; border:1px solid #34627b; border-radius:7px; min-height:18px; max-height:18px; padding:0 6px; font-size:10px; }
 QPushButton#ScrollBottom:hover { color:#ffffff; background:#24405a; }
 QLabel#Credit { color:#9badc2; background:#0b1723; border-top:1px solid #263b50; min-height:20px; max-height:20px; font-size:10px; }
@@ -142,6 +142,15 @@ QIcon settingsIcon(){
     painter.translate(12,12);
     for(int i=0;i<8;++i){painter.drawLine(QPointF(0,-8),QPointF(0,-10));painter.rotate(45);}
     painter.drawEllipse(QPointF(0,0),6.8,6.8);painter.drawEllipse(QPointF(0,0),2.5,2.5);
+    painter.end();image.setDevicePixelRatio(2);return QIcon(image);
+}
+QIcon sendIcon(){
+    QPixmap image(48,48);image.fill(Qt::transparent);
+    QPainter painter(&image);painter.setRenderHint(QPainter::Antialiasing);painter.scale(2,2);
+    painter.setPen(QPen(QColor("#aebde3"),1.7,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));painter.setBrush(Qt::NoBrush);
+    QPainterPath plane;plane.moveTo(2,11);plane.lineTo(22,3);plane.lineTo(16,21);
+    plane.lineTo(11,14);plane.lineTo(2,11);plane.closeSubpath();painter.drawPath(plane);
+    painter.drawLine(11,14,22,3);
     painter.end();image.setDevicePixelRatio(2);return QIcon(image);
 }
 
@@ -332,7 +341,12 @@ public:
         setObjectName("StreamChatRoot");setMinimumWidth(275);setStyleSheet(ChatStyle);
         pages_=new QStackedLayout(this);auto* chatPage=new QWidget(this);pages_->addWidget(chatPage);
         auto* layout=new QVBoxLayout(chatPage);layout->setContentsMargins(8,8,8,8);layout->setSpacing(5);
-        auto* header=new QHBoxLayout;header->setContentsMargins(2,2,2,2);header->setSpacing(7);auto* brand=new PlatformBadge("OZK Chat");brand->setObjectName("HeaderBrand");header->addWidget(brand);auto* title=new QLabel("<span style='color:#57dfd1'>OZK</span> Chat");title->setObjectName("Title");title->setTextFormat(Qt::RichText);title->setAccessibleName("OZK Chat");header->addWidget(title,1);settings_=new QPushButton;settings_->setObjectName("Settings");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);settings_->setToolTip("Настройки");settings_->setAccessibleName("Настройки");header->addWidget(settings_);layout->addLayout(header);
+        auto* header=new QHBoxLayout;header->setContentsMargins(2,2,2,2);header->setSpacing(7);
+        auto* brand=new PlatformBadge("OZK Chat");brand->setObjectName("HeaderBrand");header->addWidget(brand);
+        auto* title=new QLabel("<span style='color:#57dfd1'>OZK</span> Chat");title->setObjectName("Title");title->setTextFormat(Qt::RichText);title->setAccessibleName("OZK Chat");header->addWidget(title,1);
+        compose_=new QPushButton;compose_->setObjectName("HeaderAction");compose_->setIcon(sendIcon());compose_->setIconSize(QSize(19,19));compose_->setFixedSize(30,28);header->addWidget(compose_);
+        settings_=new QPushButton;settings_->setObjectName("HeaderAction");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);header->addWidget(settings_);
+        layout->addLayout(header);
 
         auto* twitchCard=card();auto* twitchLayout=new QVBoxLayout(twitchCard);twitchLayout->setContentsMargins(8,6,8,6);twitchLayout->setSpacing(5);
         auto* twitchHead=new QHBoxLayout;twitchHead->setSpacing(6);twitchHead->addWidget(new PlatformBadge("Twitch"));twitchHead->addWidget(sectionTitle("Twitch"));twitchViewers_=new QLabel;twitchViewers_->setObjectName("Hint");twitchViewers_->setToolTip("Смотрят Twitch сейчас");twitchHead->addWidget(twitchViewers_);twitchStatus_=new QLabel;twitchStatus_->setAlignment(Qt::AlignRight|Qt::AlignVCenter);twitchStatus_->setWordWrap(true);twitchStatus_->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Preferred);twitchHead->addWidget(twitchStatus_,1);login_=new QPushButton("Войти");twitchHead->addWidget(login_);logout_=new QPushButton("×");logout_->setObjectName("Disconnect");logout_->setToolTip("Отключить Twitch");twitchHead->addWidget(logout_);twitchLayout->addLayout(twitchHead);
@@ -401,6 +415,7 @@ public:
         connect(&twitch_,&sc::TwitchChat::clearChat,this,[this]{remove([](const sc::ChatMessage& m){return m.platform=="Twitch";});});
         connect(&twitch_,&sc::TwitchChat::sent,this,[this](bool confirmed,const QString& reason){completed("Twitch",confirmed,reason);});
         connect(&youtube_,&sc::YouTubeChat::sent,this,[this](bool confirmed,const QString& reason){completed("YouTube",confirmed,reason);});
+        connect(compose_,&QPushButton::clicked,this,[this]{pages_->setCurrentIndex(0);input_->setFocus(Qt::ShortcutFocusReason);});
         connect(settings_,&QPushButton::clicked,this,[this]{openSettings();});
         {QSettings saved(configPath("ui.ini"),QSettings::IniFormat);language_=saved.value("language","auto").toString();if(language_!="auto"&&language_!="ru"&&language_!="en")language_="auto";english_=language_=="en"||(language_=="auto"&&obsLanguageIsEnglish());}
         applyLanguage();
@@ -641,6 +656,7 @@ private:
         outer->addStretch();
     }
     void applyLanguage(){
+        compose_->setToolTip(english_?"Write a message":"Написать сообщение");compose_->setAccessibleName(compose_->toolTip());
         settings_->setToolTip(english_?"Settings":"Настройки");settings_->setAccessibleName(settings_->toolTip());
         login_->setText(english_?"Sign in":"Войти");googleLogin_->setText(login_->text());
         logout_->setToolTip(english_?"Disconnect Twitch":"Отключить Twitch");googleLogout_->setToolTip(english_?"Disconnect YouTube":"Отключить YouTube");
@@ -860,7 +876,7 @@ private:
 #ifdef STREAM_CHAT_PREVIEW
     bool previewStreaming_=false;
 #endif
-    QWidget* kickCard_=nullptr;QLabel* kickViewers_=nullptr;QLabel* kickStatus_=nullptr;QLabel* kickCount_=nullptr;QAbstractButton* kickTarget_=nullptr;QPushButton* kickLogin_=nullptr;QPushButton* kickLogout_=nullptr;bool kickEnabled_=false,kickSent_=false;quint64 kickMessages_=0;QStackedLayout* pages_=nullptr;WrappedChatEdit* messages_=nullptr;QLabel* twitchStatus_=nullptr;QLabel* youtubeStatus_=nullptr;QLabel* twitchViewers_=nullptr;QLabel* youtubeViewers_=nullptr;QLabel* code_=nullptr;QLabel* delivery_=nullptr;QLabel* totalCount_=nullptr;QLabel* twitchCount_=nullptr;QLabel* youtubeCount_=nullptr;QLabel* traffic_=nullptr;QLabel* cpuValue_=nullptr;QLabel* memoryValue_=nullptr;QLabel* chatTitle_=nullptr;QLabel* recipientHint_=nullptr;QLabel* usageTitle_=nullptr;QLabel* memoryName_=nullptr;QWidget* usageCard_=nullptr;QPushButton* settings_=nullptr;QPushButton* scrollBottom_=nullptr;
+    QWidget* kickCard_=nullptr;QLabel* kickViewers_=nullptr;QLabel* kickStatus_=nullptr;QLabel* kickCount_=nullptr;QAbstractButton* kickTarget_=nullptr;QPushButton* kickLogin_=nullptr;QPushButton* kickLogout_=nullptr;bool kickEnabled_=false,kickSent_=false;quint64 kickMessages_=0;QStackedLayout* pages_=nullptr;WrappedChatEdit* messages_=nullptr;QLabel* twitchStatus_=nullptr;QLabel* youtubeStatus_=nullptr;QLabel* twitchViewers_=nullptr;QLabel* youtubeViewers_=nullptr;QLabel* code_=nullptr;QLabel* delivery_=nullptr;QLabel* totalCount_=nullptr;QLabel* twitchCount_=nullptr;QLabel* youtubeCount_=nullptr;QLabel* traffic_=nullptr;QLabel* cpuValue_=nullptr;QLabel* memoryValue_=nullptr;QWidget* usageCard_=nullptr;QPushButton* compose_=nullptr;QPushButton* settings_=nullptr;QPushButton* scrollBottom_=nullptr;
     QLineEdit* input_=nullptr;QAbstractButton* target_=nullptr;QPushButton* send_=nullptr;QPushButton* login_=nullptr;QPushButton* logout_=nullptr;
     QAbstractButton* youtubeTarget_=nullptr;QComboBox* broadcast_=nullptr;QPushButton* googleLogin_=nullptr;QPushButton* googleLogout_=nullptr;
     QLabel* lastMessage_=nullptr;QDateTime lastReceived_;QString mentionNames_,botNames_;bool highlightMentions_=true,hideBots_=false;QQueue<sc::ChatMessage> history_,pending_;QTimer batch_,trafficTimer_,emoteRedraw_;QElapsedTimer usageClock_;QNetworkAccessManager emoteHttp_;QHash<QString,QPixmap> emotes_,avatars_;QSet<QString> pendingEmotes_,failedEmotes_,pendingAvatars_,failedAvatars_;std::uint64_t lastCpuNs_=0;int activeSends_=0,unread_=0,textScale_=100;bool allSent_=false,twitchSent_=false,youtubeSent_=false;bool streaming_=false,seenThisStream_=false,english_=false,redrawing_=false,emotesDirty_=false;QString language_="auto";quint64 twitchMessages_=0,youtubeMessages_=0;QStringList results_;

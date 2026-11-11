@@ -48,7 +48,7 @@ jobs:
           [ordered]@{product='OZK Chat';version=$spec.version;commit=$env:GITHUB_SHA;obs='33.0.0';qt='6.11.1';packageType='unsigned-alpha';platforms=@('Twitch','YouTube','Kick');liveAccountValidation=[ordered]@{Kick='verified with a real account: read, sign-in, refresh and send';Twitch='pending real broadcast verification';YouTube='pending real broadcast verification'}}|ConvertTo-Json -Depth 4|Set-Content package/BUILD_INFO.json -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: OZKChat-0.4.7-OBS33-Windows-x64
+          name: OZKChat-0.4.8-OBS33-Windows-x64
           path: package/
           if-no-files-found: error
       - name: Render Russian and English dock previews
