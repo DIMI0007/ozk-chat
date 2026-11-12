@@ -122,8 +122,8 @@ QPushButton#Primary:hover { background:#8af9d0; border-color:#c7ffea; }
 QPushButton#Primary:disabled { color:#71879b; background:#1a2b39; border-color:#314251; }
 QPushButton#Disconnect { color:#8ea1c0; background:#111b28; border:1px solid #304057; border-radius:7px; min-width:24px; max-width:24px; min-height:24px; max-height:24px; padding:0; font-size:16px; font-weight:700; }
 QPushButton#Disconnect:hover { color:#ff8d96; background:#2a1820; border-color:#8d4350; }
-QPushButton#HeaderAction { color:#e1ebff; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #202a3b,stop:1 #141d2b); border:1px solid #39465d; border-radius:8px; padding:0; }
-QPushButton#HeaderAction:hover { background:#26344d; border-color:#6476a0; }
+QPushButton#HeaderAction,QPushButton#Settings { color:#e1ebff; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #202a3b,stop:1 #141d2b); border:1px solid #39465d; border-radius:8px; padding:0; }
+QPushButton#HeaderAction:hover,QPushButton#Settings:hover { background:#26344d; border-color:#6476a0; }
 QPushButton#ScrollBottom { color:#b7efff; background:#17283a; border:1px solid #34627b; border-radius:7px; min-height:18px; max-height:18px; padding:0 6px; font-size:10px; }
 QPushButton#ScrollBottom:hover { color:#ffffff; background:#24405a; }
 QLabel#Credit { color:#9badc2; background:#0b1723; border-top:1px solid #263b50; min-height:20px; max-height:20px; font-size:10px; }
@@ -345,7 +345,7 @@ public:
         auto* brand=new PlatformBadge("OZK Chat");brand->setObjectName("HeaderBrand");header->addWidget(brand);
         auto* title=new QLabel("<span style='color:#57dfd1'>OZK</span> Chat");title->setObjectName("Title");title->setTextFormat(Qt::RichText);title->setAccessibleName("OZK Chat");header->addWidget(title,1);
         compose_=new QPushButton;compose_->setObjectName("HeaderAction");compose_->setIcon(sendIcon());compose_->setIconSize(QSize(19,19));compose_->setFixedSize(30,28);header->addWidget(compose_);
-        settings_=new QPushButton;settings_->setObjectName("HeaderAction");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);header->addWidget(settings_);
+        settings_=new QPushButton;settings_->setObjectName("Settings");settings_->setIcon(settingsIcon());settings_->setIconSize(QSize(19,19));settings_->setFixedSize(30,28);header->addWidget(settings_);
         layout->addLayout(header);
 
         auto* twitchCard=card();auto* twitchLayout=new QVBoxLayout(twitchCard);twitchLayout->setContentsMargins(8,6,8,6);twitchLayout->setSpacing(5);
